@@ -59,7 +59,7 @@ const klass = (function() {
                   this.template.init(klsfunc,thiss); 
                   let kv = klassVars(klsfunc); kv.initialized = vrs.initialized = true; klassVars.set(klsfunc,kv); 
                   vrs.initialized = true; delete this.template.init; delete vrs.init;
-               } else {  console.log(klsfunc.name+' initializing ...');console.log(klsfunc.name+' initializing ...');console.log(klsfunc.name+' initializing ...') }
+               } 
             }
          }}
          if (tmp.template) tmp.template = integrate(tmp.template,{...tmp},['__proto__','template',typeof tmp.template === 'function' && 'constructor'],null,false)
@@ -97,7 +97,6 @@ const klass = (function() {
       }
 
       vars.template.private = vars.template.private || {}
-
 
       let bind = instanceVars(this) && instanceVars(this).bind
       if (bind) {
@@ -175,24 +174,28 @@ const klass = (function() {
 
             const invoke = () => {
                let returnVal
-               thiss.newTarget = !!thiss.Super
-               if (!thiss.newTarget && !newTarget) {
+               thiss.newTarget = ('super' in thiss || 'Super' in thiss)
+               // If there is no new target we just call the function
+               if (!thiss.newTarget && !newTarget)
                   thiss = func(...arg)
-               }
+            
+               // If "new" this function was called directly
                else if (!thiss.newTarget) {
                   thiss = new cls(...arg)
                   thiss.constructor = cls
                }
                let priv = new Mirror({},vars.template.private,thiss,false)
                instanceVars.set(thiss,priv); 
-               write(thiss, '{{vars}}', { get: function() { return instanceVars(thiss) }, enumerable:false })
+               write(thiss, '{{vars}}', { get: function() { return instanceVars(thiss) }, enumerable:false },null,null,false)
 
                if (!cls || !func)
                   returnVal = newTarget ? thiss : void 0
 
-               else if (newTarget)
-                  returnVal = new cls(...arg)
-
+               else if (newTarget) {
+                  if (!thiss.newTarget) {
+                     returnVal = thiss
+                  } else { returnVal = new cls(...arg) }
+               }
                else if (thiss.newTarget)
                   returnVal = func.call(thiss,...arg)
 
@@ -201,11 +204,14 @@ const klass = (function() {
 
                try { return returnVal || !thiss.newTarget ? thiss : func.call(thiss,...arg) } finally { delete thiss.newTarget; thiss.constructor = func }
             }
-            let arch
-            if (backup) arch = invoke();
+            let arch = backup ? invoke() : undefined
             backup = false
             const res = invoke()
-            if (arch) history.set(res,{0: arch})
+            if (arch) {
+               if (!(history.get(res) && history.get(res)[0])) {
+                  history.set(res,{0: arch})
+               }
+            }
             return res
          }}[className]
          return klassFunc
@@ -219,7 +225,7 @@ const klass = (function() {
             klsfunc.extends = function extendClass(ex,...arg) {
                klsVars.extends = ex; klsVars.things = 'stuff '
                try { return klass(klsfunc,...arg) } finally {            
-                  write(klsfunc,'extends',{value:ex,enumerable:false,writable:false,configurable:true}) 
+                  write(klsfunc,'extends',{value:ex,enumerable:false,writable:false,configurable:true},false) 
                }
             }
          }
@@ -261,7 +267,6 @@ const klass = (function() {
       }
       const KlassFunc = {[vars.name]: class extends extendz {
          constructor(...arg) {
-
             let newKonstructor; let thisBase; 
             if (arg[0] === 'super') {
    
@@ -286,6 +291,7 @@ const klass = (function() {
                if (!superMirror) 
                   makeSuper(Sup,thisBase,extendz)
                else proto.set(Sup,superMirror)
+               vars.superRes = Sup
                return Sup
             }
             if (arg[0] === 'newKonstructor') { newKonstructor = arg.shift(); }
@@ -293,7 +299,6 @@ const klass = (function() {
 
             let sup = { ['super']: (...ar) => {
                if (!superArgs) superArgs = ar;
-            
                superRes = new KlassFunc('super')(...ar)
                newInstanceArgs = [...getSuperArgs(ar),{backup:false,key:backupKey}]
 
@@ -309,26 +314,31 @@ const klass = (function() {
                } else vars.base = vars.base || new extendz(...[...getSuperArgs(),{backup:false,key:backupKey},{func:sup,line:321}])
                vars.thiss.super = sup
                makeSuper(sup,vars.base,extendz)
+               vars.superRes = superRes
                return superRes
             }}['super'] 
 
             makeSuper(sup,vars.base,extendz)
             vars.thiss.Super = sup
-
             if (!vars.newTarget) return vars.thiss
 
             const konstruct = { new: (...ar) => {
+               let backup = (ar[0] === backupKey) ? ar.shift() : false
                arg = ar.length > 0 ? ar : arg
+               if (!vars.thiss.Super && vars.thiss.super) vars.thiss.Super = vars.thiss.super
                try { 
                   let kFunc = vars.constructor || vars.klassFunc
                   let res = kFunc.call(vars.thiss,...arg) || vars.thiss;
 
                   if (superArgs) {   
-                     newInstanceArgs = [...getSuperArgs(),{backup:false,key:backupKey}]
-                     vars.base = new extendz(...newInstanceArgs)
-                     makeSuper(sup,vars.base,extendz)
-                     vars.thiss = sup(...getSuperArgs()); vars.thiss.Super = sup
-                     // res = vars.klassFunc.call(vars.thiss,...arg) || sup(...getSuperArgs())
+                     if (vars.superRes) vars.thiss = vars.superRes
+                     else {
+                        newInstanceArgs = [...getSuperArgs(),{backup:false,key:backupKey}]
+                        vars.base = new extendz(...newInstanceArgs)
+                        makeSuper(sup,vars.base,extendz)
+                        vars.thiss = sup(...getSuperArgs()); 
+                     }
+                     vars.thiss.Super = sup
                      res = kFunc.call(vars.thiss,...arg) || sup(...getSuperArgs())
                   }
                   let thiss = vars.thiss
@@ -337,26 +347,38 @@ const klass = (function() {
                         proto.set(res,thiss.constructor.prototype)  
                      }
                   }
+
+                  if (res instanceof vars.thiss.constructor)
+                     write(res,'<konstructor>',{value:konstruct,enumerable:false,writable:false,configurable:false},null,null,false)
+
+                  if (vars.klassFunc) {
+                     let resProto = Object.getPrototypeOf(res).constructor.name
+                     if (Lineage(vars.klassFunc)[resProto])
+                        Object.setPrototypeOf(res,vars.klassFunc.prototype)
+                  }
+
+                  if (!res.constructor || !res['{{vars}}']) {
+                     res.constructor = thiss.constructor
+                     tryCatch(() => { if (!res['{{vars}}']) write(res,'{{vars}}',{ get: function() { return instanceVars(thiss) },enumerable:false },null,null,false) })
+                     tryCatch(() => { if (!res['<konstructor>']) write(res,'<konstructor>',{ get: function() { return thiss['<konstructor>'] },enumerable:false },null,null,false) })
+                  }
+                  if (!history.has(res) && !backup) {
+                     history.set(res,{ 0: konstruct(backupKey) })
+                  }
                   return res
                } finally { delete vars.thiss.Super; }
             }}['new']
+
             if (newKonstructor) return konstruct
             let res = konstruct() 
-            if (res instanceof vars.thiss.constructor)
-               write(res,'<konstructor>',{value:konstruct,enumerable:false,writable:false,configurable:false})
-            if (vars.klassFunc) {
-               let resProto = Object.getPrototypeOf(res).constructor.name
-               if (Lineage(vars.klassFunc)[resProto])
-                  Object.setPrototypeOf(res,vars.klassFunc.prototype)
-            }
             return res
          }
       }}[vars.name]
       let mirrorKlass
       if (vars.newTarget) {
          let newey = new KlassFunc('newKonstructor')
-         write(vars.klassFunc,'new',{value: newey,enumerable:true, writable:false, configurable:true} )
-         if (vars.klassFunc.template) write(vars.klassFunc.template,'new',newey,vars.klassFunc.new)
+         write(vars.klassFunc,'new',{value: newey,enumerable:true, writable:false, configurable:true},false )
+         if (vars.klassFunc.template) write(vars.klassFunc.template,'new',newey,vars.klassFunc.new,null,false)
       }
       if (!int) return KlassFunc
 
@@ -368,7 +390,7 @@ const klass = (function() {
       return new mirrorKlass('super')
 
       function makeSuper(supper,base,extendz) {
-         let ar = getSuperArgs() || []; newInstanceArgs = [...ar,{backup:false,key:backupKey}]
+         let ar = getSuperArgs() || []; newInstanceArgs = klassVars(extendz) ? [...ar,{backup:false,key:backupKey}] : ar
          base = base || vars.base; supper = supper || Sup;
          let TypeCon = TypeClass(extendz).constructor
          if (!base) tryCatch( () => base = new extendz(...newInstanceArgs),() => base = proto.set(new TypeCon,extendz.prototype) )

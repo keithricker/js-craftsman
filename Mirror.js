@@ -1,6 +1,7 @@
 const { TypeOf, defined, FrailMap, history, tryCatch, write } = require('./utils')
 const mirrors = new FrailMap
-const { integrate, clone } = require('./Objekt')
+const { integrate, clone, equivalent, deleteProperty } = require('./Objekt')
+const deleteProp = deleteProperty
 
 class Mirror {
 
@@ -98,8 +99,17 @@ class Mirror {
      Object.defineProperty(mirrors(returnVal),'<type>',{value:'extender',enumerable:false,configurable:true})
      return returnVal
   }
+  static standIn(obj) {
+     let standin = new Proxy(obj,this.handlers.standIn)
+     let hist = history.get(obj)
+     if (!hist) {
+        let backup = clone(obj,true)
+        history.set(obj,{0:backup})
+     } 
+     mirrors.set(standin,{['<target>']: obj})
+     return standin      
+  }
   static clone(blank,obj,bind,method=write) {
-
      bind = bind || obj; let newProx
      if (!blank) {
         if (typeof obj === 'function') {
@@ -113,10 +123,28 @@ class Mirror {
         newProx = integrate.mirror(blank,obj,bind)
      } 
      newProx = newProx || blank
-
      let returnVal = new Proxy(newProx,this.handlers.clone(bind,method))   
      return returnVal    
   }
+}
+function backup(trg,callback) {
+   let backup; let histKeys; let last
+   let hist = history.get(trg)
+   histKeys = Reflect.ownKeys(hist).filter(num => !isNaN(num))
+   last = hist[histKeys.length-1]
+   if (equivalent(last,trg)) {
+      callback()
+      return
+   }
+   backup = backup || clone(trg,true)
+   callback()
+   if (!equivalent(backup,trg)) {
+      histKeys = Reflect.ownKeys(hist).filter(num => !isNaN(num))
+      last = hist[histKeys.length-1]
+      if (!equivalent(last,backup)) {
+         hist[histKeys.length] = backup
+      }
+   }
 }
 Mirror.handlers = {
   clone: function(ext,method=write) {
@@ -132,6 +160,21 @@ Mirror.handlers = {
               delete ext[prop] 
         }
      }
+  },
+  standIn: {
+     get: function(trg,prop) {
+        return Reflect.get(trg,prop,trg)
+     },
+     set: function(trg,prop,value) {
+        backup(trg,() => write(trg,prop,value))
+     },
+     deleteProperty: function(trg,prop) {
+        backup(trg,() => {
+           if (prop in trg) {
+              deleteProp(trg,prop,false)
+           }
+        }); 
+     }     
   }
 }
 module.exports = { Mirror, mirrors }

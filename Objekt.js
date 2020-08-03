@@ -11,6 +11,7 @@ const Objekt = (function() {
       attributes.set(bind,{Objekt:extended})
       return extended
    }
+   
    const ObjektClass = class Objekt {
       constructor(...arg) {
          
@@ -67,10 +68,19 @@ const Objekt = (function() {
          history.set(newObj,{0:backup})
          return newObj
       }
-      static clone(obj) { 
+      static clone(obj,override=false) { 
          let thiss = ObjektClass
          if (obj === Global || (obj.constructor && obj.constructor === Global)) return
-         if (typeof this === 'undefined') return
+         if (typeof this === 'undefined' && !override) return
+         const { mirrors } = require('./Mirror')
+         let histObj = history.has(obj) ? obj : mirrors.has(obj) ? mirrors.get(obj)['<target>'] : null
+         let hist = history.get(histObj) 
+         if (!hist) { 
+            histObj = histObj || obj
+            history.set(histObj,{}) 
+            hist = history.get(histObj)
+         }
+         let histKeys = () => Reflect.ownKeys(hist).filter(num => !isNaN(num))
 
          const invoke = () => {
             let constr = obj.constructor; let blankSlate
@@ -81,12 +91,7 @@ const Objekt = (function() {
             else if (constr === Function) {
                blankSlate = funktion(obj);
                simpleMerge(blankSlate,obj)
-               if (!history.get(obj))
-                  history.set(obj,{0:blankSlate})
-               else { 
-                  let hist = history.get(obj)
-                  hist[thiss.size(hist)] = blankSlate
-               }
+               hist[histKeys().length] = blankSlate
                return blankSlate
             } 
             
@@ -100,13 +105,11 @@ const Objekt = (function() {
                return blankSlate
             return integrate(blankSlate,obj,null,null,false) 
          }
-         if (!history.has(obj)) history.set(obj,{ 0: invoke() })
-         let hist = history(obj)
-         let last = hist[thiss.size(hist)-1]
+         let last = hist[histKeys().length-1]
          let record = invoke()
          
          if (!thiss.equivalent(last,record)) {
-            hist[thiss.size(hist)] = record
+            hist[histKeys().length] = record
             return invoke()
          }  
          return record       
@@ -168,8 +171,7 @@ const Objekt = (function() {
          let thiss = ObjektClass
          let constr = typeof obj === 'function' ? obj : obj.constructor
          if (constr.extends) return constr.extends
-
-         
+  
          let base = thiss.lineage(obj)[constr.name]; 
 
          if (base) { 
@@ -211,7 +213,7 @@ const Objekt = (function() {
             let val = (name === 'length' && typeof sr.length !== 'undefined') ? sr.length > tr.length ? sr.length : tr.length : null
             if (cb) return cb(name,val||sr[name],Object.getOwnPropertyDescriptor(sr,name))
             else {
-               return tryCatch(() => Objekt.define(tr,name,val,sr))
+               return tryCatch(() => Objekt.define(tr,name,val,sr,null,backup))
             }
          })
          Object.setPrototypeOf(tr,pro)
@@ -363,7 +365,7 @@ function integrate(trg,src,ex=[],cb,backup=true) {
       simpleMerge(newMap,trg,ex)
       trg = newMap
  
-   } else if (src[Symbol.iterator] && trg !== trg.constructor.prototype) {
+   } else if (src[Symbol.iterator] && trg[Symbol.iterator] && trg !== trg.constructor.prototype) {
       let trg1 = []
       iterations(trg,trg1)
       iterations(src,trg1)
@@ -392,7 +394,7 @@ integrate.extend = function(target,source,bind,exc,backup=false) {
    },backup) 
    return target
 }
-integrate.mirror = function(target,source,bind) {
+integrate.mirror = function(target,source,bind,backup=false) {
    bind = bind || source
    if (target === null) target = Object.setPrototypeOf(new (TypeOf.class(source)),Object.getPrototypeOf(source))
    target = integrate.extend(target,source,bind)
@@ -400,7 +402,7 @@ integrate.mirror = function(target,source,bind) {
       let prot = source; let combined = {}; let prev=combined
       while (prot = Object.getPrototypeOf(prot)) {
          let bound = Reflect.ownKeys(prot).reduce((prev,item) => {
-            Objekt.define(prev,item,null,prot,bind); return prev
+            Objekt.define(prev,item,null,prot,bind,backup); return prev
          },{})
          Object.setPrototypeOf(prev,bound)
          prev = bound

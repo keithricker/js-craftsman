@@ -127,8 +127,10 @@ const konstructor = klass('konstructor').extends(Object)
       }
       get prototype() {
          if (!this || this === Global || this === konstructor || this.constructor.name === 'konstructor' || this.name && this.name === 'konstructor') return  
+         console.log('peg')
          let thiss = this
          let prototype = (prot) => { 
+            console.log('hey',thiss)
             if (!thiss) return undefined 
             if (!prot) return Objekt.proto.get(thiss)
             if (TypeOf(thiss) === thiss.constructor.name && thiss.hasOwnProperty('constructor'))

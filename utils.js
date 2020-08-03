@@ -104,7 +104,7 @@ const FrailMap = (function() {
          Object.setPrototypeOf(frailMap,newProto)
          return frailMap
       }
-      get(...arg) { return maps.get(this).get(...arg); }
+      get(...arg) {  if (arg[0] === Global) return; return maps.get(this).get(...arg); }
       set(...arg) { if (typeof arguments[0] !== 'object' && typeof arguments[0] !== 'function') return; let has = maps.get(this).has(arguments[0]); let set = maps.get(this).set(...arg); if (!has && set) this.size++; return set }
       delete(...arg) { let deleted = maps.get(this).delete(...arg); if (deleted) this.size --; return deleted }
       has(...arg) { return maps.get(this).has(...arg) }
@@ -257,19 +257,22 @@ function reflect(obj) {
    },{});
 }
 simpleMerge(reflect,Reflekt)
-
 const history = new FrailMap
-
 // static define = Object.defineProperty
-function write(trg,key,val,src,bind,backup=true) {  
-   const { equivalent, clone } = require('./Objekt')
-   if (backup && history.has(trg)) {
-      let hist = history(trg)
-      let last = hist[hist.length-1]
-      if (!equivalent(last,trg))
-         hist[hist.length] = clone(trg)
+function write(trg,key,val,src,bind,backup=true) {
+   if (!bind && typeof src === 'boolean') {
+      backup = src; src = undefined
    }
-
+   const { equivalent, clone } = require('./Objekt')
+   const { mirrors } = require('./Mirror')
+   let hist = history.has(trg) ? history.get(trg) : mirrors.has(trg) ? history.get(mirrors.get(trg)['<target>']) : null
+   if (backup && hist) {
+      let histKeys = Reflect.ownKeys(hist).filter(num => !isNaN(num))
+      let last = hist[histKeys.length-1]
+      if (hist && !equivalent(last,trg)) {
+         hist[histKeys.length] = clone(trg,true)
+      }
+   } 
    if (src && src.constructor === Function && Array('caller','callee','arguments').includes(key)) return trg
    let valDesc = val && isDescriptor(val) ? val : src && isDescriptor(src[key]) ? src[key] : null; let srcDesc = src && isDescriptor(src[key]) ? src[key] : src && Object.getOwnPropertyDescriptor(src,key); let trgDesc = Object.getOwnPropertyDescriptor(trg,key); 
    let defaultDesc = (val && !(typeof val === 'object' && (('get' in val) || ('set' in val)))) ? { value:val,writable:true,enumerable:true,configurable:true } : { ...val }
@@ -303,7 +306,7 @@ function write(trg,key,val,src,bind,backup=true) {
       return trg
    } 
    if (trgDesc && defined(trgDesc.configurable) && trgDesc.configurable === false) {
-      if (trgDesc.writable) trg[key] = desc.value || desc.get()
+      if (trgDesc.writable) trg[key] = ('value' in desc) ? desc.value : ('get' in desc) ? desc.get() : undefined
       return
    }
    Object.defineProperty(trg,key,desc);
@@ -324,11 +327,16 @@ write.get = function(obj,key,val,src=null,bind=null) {
       tryCatch(cb,() => bind = null)
    }
    if (!descKey) {
-      descKey = {[key]: function() { return getSets.get(descKey).get.call(bind) } }[key]
+      descKey = {[key]: function() { 
+         let getter = getSets.get(descKey).get
+         if ((descKey === getter) && getter !== val) 
+            getter = val
+         return getter.call(bind) 
+      }}[key]
       if (!(desc && desc.configurable === false))
          Object.defineProperty(obj,key, { get: descKey,set: {[key]: function(x) { let setter = getSets.get(descKey).set; return setter.call(bind,x) }}[key]})
    }
-   let descSet = getSets.get(descKey) && getSets.get(descKey).set || {[key]: function() { return '' } }[key]
+   let descSet = getSets.get(descKey) ? getSets.get(descKey).set : {[key]: function() { return '' } }[key]
    getSets.set(descKey,{ set:descSet, get:val })
    if (bind) getSets.get(descKey).binder = bind
 }
@@ -336,14 +344,14 @@ write.set = function(obj,key,val,src=null,bind=null) {
    let desc = Object.getOwnPropertyDescriptor(obj,key); 
    if (!desc && src) desc = Object.getOwnPropertyDescriptor(src,key) 
    let descKey; bind = bind || obj
-   descKey = desc && getSets.has(desc.get) ? desc.get : desc && getSets.has(desc.set) && desc.set
+   descKey = desc && getSets.has(desc.get) ? desc.get : desc && getSets.has(desc.set) ? desc.set : undefined
    if (!descKey) {
       descKey = {[key]: function() { return getSets.get(descKey).get.call(bind) }}[key]
       if (!(desc && desc.configurable === false))
          Object.defineProperty(obj,key, { get: descKey,set: function(x) { let setter = getSets.get(descKey).set; return setter.call(bind,x) }})
    }
    if (descKey.binder) bind = descKey.binder
-   let descGet = getSets.get(descKey) && getSets.get(descKey).get || {[key]: function() {}}[key] 
+   let descGet = getSets.get(descKey) ? getSets.get(descKey).get : {[key]: function() {}}[key] 
    getSets.set(descKey,{ set:val.bind(bind), get:descGet })
 }
 
