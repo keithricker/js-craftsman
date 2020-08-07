@@ -274,7 +274,8 @@ function write(trg,key,val,src,bind,backup=true) {
       }
    } 
    if (src && src.constructor === Function && Array('caller','callee','arguments').includes(key)) return trg
-   let valDesc = val && isDescriptor(val) ? val : src && isDescriptor(src[key]) ? src[key] : null; let srcDesc = src && isDescriptor(src[key]) ? src[key] : src && Object.getOwnPropertyDescriptor(src,key); let trgDesc = Object.getOwnPropertyDescriptor(trg,key); 
+   let valDesc = val && isDescriptor(val) ? val : src && isDescriptor(src[key]) ? src[key] : null; let srcDesc = src && isDescriptor(src[key]) ? src[key] : src && Object.getOwnPropertyDescriptor(src,key); 
+   let trgDesc = Object.getOwnPropertyDescriptor(trg,key); 
    let defaultDesc = (val && !(typeof val === 'object' && (('get' in val) || ('set' in val)))) ? { value:val,writable:true,enumerable:true,configurable:true } : { ...val }
    
    let desc = valDesc || srcDesc || trgDesc || defaultDesc
@@ -340,6 +341,7 @@ write.get = function(obj,key,val,src=null,bind=null) {
    getSets.set(descKey,{ set:descSet, get:val })
    if (bind) getSets.get(descKey).binder = bind
 }
+let setVal
 write.set = function(obj,key,val,src=null,bind=null) {
    let desc = Object.getOwnPropertyDescriptor(obj,key); 
    if (!desc && src) desc = Object.getOwnPropertyDescriptor(src,key) 
@@ -348,7 +350,10 @@ write.set = function(obj,key,val,src=null,bind=null) {
    if (!descKey) {
       descKey = {[key]: function() { return getSets.get(descKey).get.call(bind) }}[key]
       if (!(desc && desc.configurable === false))
-         Object.defineProperty(obj,key, { get: descKey,set: function(x) { let setter = getSets.get(descKey).set; return setter.call(bind,x) }})
+         Object.defineProperty(obj,key, { get: descKey,set: function(x) { 
+            let setter = getSets.get(descKey).set; 
+            return setter(x) 
+         }})
    }
    if (descKey.binder) bind = descKey.binder
    let descGet = getSets.get(descKey) ? getSets.get(descKey).get : {[key]: function() {}}[key] 

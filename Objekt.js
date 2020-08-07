@@ -45,7 +45,8 @@ const Objekt = (function() {
             }
             if (areDescriptors(prot)) 
                prot = obj ? thiss.proto.get(obj) : thiss.proto.get(prot)
-            let constr = obj !== arguments[1] ? obj.constructor : obj.TypeOf || prot.constructor
+            let constr = obj !== arguments[1] ? obj.constructor : obj.TypeOf
+            constr = constr || prot.constructor
 
             blankSlate = blankSlate || thiss.proto.set(new (classTypeOf.class(constr))(),prot)
             if (!descr) return blankSlate
@@ -69,6 +70,7 @@ const Objekt = (function() {
          return newObj
       }
       static clone(obj,override=false) { 
+         if (!Object.getPrototypeOf(obj)) return
          let thiss = ObjektClass
          if (obj === Global || (obj.constructor && obj.constructor === Global)) return
          if (typeof this === 'undefined' && !override) return
@@ -289,7 +291,18 @@ const Objekt = (function() {
       get symbols() { if (!this || this === Global) return; return ObjektClass.symbols(this) }
       get descriptors() { if (!this || this === Global) return; return Object.getOwnPropertyDescriptors(this) }
       get TypeOf() { if (!this || this === Global) return; return ObjektClass.TypeOf(this) }
-      get properties() { if (!this || this === Global || (this.hasOwnProperty('constructor') && this.constructor.name === 'Objekt')) return; const ObjectMap = require('./ObjectMap'); return new ObjectMap(this) }
+      get properties() { if (!this || this === Global || (this.hasOwnProperty('constructor') && this.constructor.name === 'Objekt')) return; 
+         const ObjectMap = require('./ObjectMap'); 
+         let thiss = this
+         let newMap = new ObjectMap(thiss);
+         function properties(arg) {
+            Reflect.ownKeys(arg).forEach(prop => {
+               ObjektClass.define(thiss,prop,null,arg)
+            })
+         }
+         integrate.mirror(properties,newMap); 
+         return properties 
+      }
       get lineage() { if (!this || this === Global || (this.hasOwnProperty('constructor') && this.constructor.name === 'Objekt')) return; return ObjektClass.lineage(this) }
       get size() { if (!this || this === Global) return; return ObjektClass.size(this) }
       clone() { return ObjektClass.clone(this) }
@@ -305,7 +318,9 @@ const Objekt = (function() {
       descriptor(...arg) { return Object.getOwnPropertyDescriptor(this,...arg) }
       equivalent(obj) { return ObjektClass.equivalent(this,obj) }
       eject() {  
-         let next = this.lineage.Objekt.next.prototype
+         let lin = ObjektClass.lineage(this)
+         if (!lin.Objekt) return
+         let next = lin.Objekt.next.prototype
          Objekt.proto.set(this,next)
       }
    } 
@@ -326,7 +341,21 @@ const Objekt = (function() {
    }
    ObjektClass.symbol.for = function(...arg) { return ObjektClass.symbol.set(...arg,true) }
    Reflect.ownKeys(ObjektClass).forEach(key => { 
+      let desc = Object.getOwnPropertyDescriptor(ObjektFunc,key)
+      if (desc && desc.writable === false) {
+         if (desc.configurable === true) {
+            Object.defineProperty(ObjektFunc,key,{...desc,writable:true})
+         }
+         else return ObjektFunc
+      }
       ObjektFunc[key] = ObjektClass[key]; 
+      desc = Object.getOwnPropertyDescriptor(ObjektClass,key)
+      if (desc && desc.writable === false) {
+         if (desc.configurable === true) {
+            Object.defineProperty(ObjektClass,key,{...desc,writable:true})
+         }
+         else return ObjektClass
+      }
       delete ObjektClass[key] 
    })                  
    ObjektFunc.proto.set(ObjektFunc,Object)

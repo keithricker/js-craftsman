@@ -38,7 +38,10 @@ class Mirror {
          get(trg = target, prop) {
             let src; let type = thiss['<type>']
             if ((excl.includes(prop) || excl[0] === '*') && (prop in trg)) src = trg
-            else src = (defined(source.get(prop)) && (prop in source.get(prop))) ? source.get(prop) : (prop in trg) ? trg : src
+            
+            else {
+               src = (defined(source.get(prop)) && (prop in source.get(prop))) ? source.get(prop) : (prop in trg) ? trg : src
+            }
 
             if (!src) return void(0)
             let desc = Object.getOwnPropertyDescriptor(trg,prop)
@@ -75,13 +78,20 @@ class Mirror {
      let type = this['<type>']
      trg = this['<target>']; let src=this.extensions; let dest = this['<destructive>']; let bind=this['<bind>']
      trg = (dest && src.length > 2) ? bind || src.get(prop) || trg : src.length < 3 ? defined(src.get(prop)) ? src.get(prop) : src[0] : !dest && src[0]
-     write(trg,prop,val,null,bind) 
+     return write(trg,prop,val,null,bind)
   }
   deleteProperty(trg, prop) {
-     let type = this['<type>']
-     trg = this['<target>']; let source=this.extensions; let bind=this['<bind>']; let destructive = this['<destructive>']; let exc=this.exclusions
+     if (arguments.length === 1) {
+        prop = trg; trg = this['<target>']
+     }
+     trg = trg || this['<target>']; let source=this.extensions; let bind=this['<bind>']; let destructive = this['<destructive>']; let exc=this.exclusions
      if (destructive) {
-        delete trg[prop]; if (source.get(prop)) delete source.get(prop)[prop]; if (bind) delete bind[prop]
+        delete trg[prop]; 
+        if (source.get(prop)) 
+        delete source.get(prop)[prop]; 
+        if (bind) delete bind[prop]
+        let ext = this.extensions.get(prop)
+        if (ext) delete ext[prop]
      }
      else { 
         if (!prop in trg) 
@@ -167,6 +177,7 @@ Mirror.handlers = {
      },
      set: function(trg,prop,value) {
         backup(trg,() => write(trg,prop,value))
+        return true
      },
      deleteProperty: function(trg,prop) {
         backup(trg,() => {

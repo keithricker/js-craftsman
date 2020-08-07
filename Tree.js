@@ -6,27 +6,27 @@ const Tree = (function() {
 
    class Branch extends Entry {
       constructor(...arg) {
-      super(...arg)
+         super(...arg)
       }
    }       
    class Limbs extends Entries {
       constructor(...arg) {
-      super()
-      let entries = []
-      if (arguments.length === 1 && TypeOf(arguments[0]) === 'Array')
-         entries = arguments[0]
-      else if (arguments.length > 1)
-         entries = [...arg]
-      entries.forEach((arr,ind) => {
-         let key; let val
-         if (typeof arr === 'object' && ('key' in arr) && ("value" in arr)) {
-            key = arr.key; val = arr.value
-         } else { 
-            key = arr[0]; val = arr[1]
-         }
-         this.forEach(item => { if (item.key === key) item.value = val; return })
-         this[ind] = new Branch(key,val)
-      });  
+         super()
+         let entries = []
+         if (arguments.length === 1 && TypeOf(arguments[0]) === 'Array')
+            entries = arguments[0]
+         else if (arguments.length > 1)
+            entries = [...arg]
+         entries.forEach((arr,ind) => {
+            let key; let val
+            if (typeof arr === 'object' && ('key' in arr) && ("value" in arr)) {
+               key = arr.key; val = arr.value
+            } else { 
+               key = arr[0]; val = arr[1]
+            }
+            this.forEach(item => { if (item.key === key) item.value = val; return })
+            this[ind] = new Branch(key,val)
+         });  
       } 
    }
    class Tree extends Object {
@@ -131,12 +131,13 @@ const Tree = (function() {
    }
    Object.defineProperty(Tree.prototype, "set", {
       value: function(key, value) {
-         let limb = this.get(key,value); if (limb) { limb.key = key; limb.value = value; return limb }
+         let limb = this.query(key,value); if (limb) { limb.key = key; limb.value = value; return limb }
          this['<limbs>'].push(new Branch(key, value));
       }
    ,enumerable:true,writable:false,configurable:true});
    Object.defineProperty(Tree.prototype, "get", {
       value: function(prop) {
+         // return prop
          return this.query(prop).value
       }
    ,enumerable:true,writable:false,configurable:true}); 

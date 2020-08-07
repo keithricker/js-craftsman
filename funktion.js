@@ -1,4 +1,4 @@
-const { TypeOf, FrailMap, simpleMerge, history } = require('./utils')
+const { TypeOf, FrailMap, simpleMerge, history, Global } = require('./utils')
 
 function args(func) {
    return (func + '')
@@ -29,24 +29,29 @@ args.map = function(args) {
  
 let ties = new FrailMap()
 function funktion(func,funcName,replace={}) { 
+   if (typeof func !== 'function') {
+      replace = funcName; funcName = func; func = undefined
+   }
    let tie = null
    var name = funcName || func.name
 
    let defaultTemplate = { 
-      func, name, tie, ties, toString:null, ...replace 
+      func, name, tie, ties, toString:null, Global:Global, ...replace 
    };
+   if (!func) delete defaultTemplate.func
    let def = defaultTemplate
 
    def.toString = def.toString || 
    `const ${def.name} = function ${def.name}(...args) {
-      tie = ties.get(${def.name}) || [func]
-      arguments = [...tie,...args];
-      if (typeof ${def.name}['<init>'] !== 'undefined') delete ${def.name}['<init>']
-      if (!new.target) {
-         return func.call(...arguments)
-      }
-      return new func(...args)
-   }; return ${def.name}`
+      let thiss = (typeof this !== 'undefined' && this !== Global) ? this : null
+      tie = ties.get(${def.name}) || [thiss] || [func]
+       arguments = [...tie,...args];
+       if (typeof ${def.name}['<init>'] !== 'undefined') delete ${def.name}['<init>']
+       if (!new.target) {
+          return func.call(...arguments)
+       }
+       return new func(...args)
+    }; return ${def.name}`
 
    const funkGen = function(nm=name,nTie=def.tie) { 
       let repl = { ...defaultTemplate, name:nm, tie:nTie }

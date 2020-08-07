@@ -30,6 +30,13 @@ const Chars = klass({
          const matchesUnique = [ ...new Set(matches)]
          Object.defineProperty(matches,'unique',{ value:matchesUnique,enumerable:false })
          return matches
+      },
+      random(length = 8) {
+         let num = length / 2 + 2;
+         return (
+            Math.random().toString(36).substring(2, num) +
+            Math.random().toString(36).substring(2, num)
+         );
       }
    },
    prototype: {
@@ -40,7 +47,12 @@ const Chars = klass({
          return hasFunc(target, str)
       },
       findAll(search,callback = null) {
-         return Chars.findAll(this,search,callback)
+         let thiss = this
+         let found = Chars.findAll(this,search,callback)
+         let mixin = (replace) => { 
+            return thiss.replace(search).with(replace).all()
+         }
+         return Objekt.mixin(found,mixin)
       },
       replace(...target) {
          let str = this
@@ -64,19 +76,21 @@ const Chars = klass({
          }
          let twoArgs = (arguments.length === 2 && (typeof arguments[0] === 'string' && typeof arguments[1] === 'string')) 
          theString = twoArgs ? _with(theString,[arguments[0]],arguments[1]) : theString 
-         return Objekt.mixin(Object(theString), {
+         let mixin1 = {
             with: (replacement) => {
                theString = walkBack
                theString = _with(theString,target,replacement)
-               return Objekt.mixin(Object(theString), {
+               let mixin = {
                   all: () => {
                      let results = str.toString()
                      target.forEach(trg => {
                         Chars.findAll(str, trg, (match) => results = String.prototype.replace.call(results,match,replacement))
                      })
-                     return results
+                     return new Chars(results)
                   }            
-               })
+               } 
+               Object.setPrototypeOf(mixin,Chars.prototype)
+               return Object.setPrototypeOf(Object(theString),mixin)           
             },
             ...twoArgs && { 
                all: () => {
@@ -84,17 +98,15 @@ const Chars = klass({
                   target.forEach(trg => {
                      Chars.findAll(str, trg, (match) => results = String.prototype.replace.call(results,match,replaceM))
                   })
-                  return results
+                  return new Chars(results)
                }    
             }
-         })
+         }
+         Object.setPrototypeOf(mixin1,Chars.prototype)
+         return Object.setPrototypeOf(Object(theString),mixin1)
       },
       random(length = 8) {
-         let num = length / 2 + 2;
-         return (
-            Math.random().toString(36).substring(2, num) +
-            Math.random().toString(36).substring(2, num)
-         );
+         return Chars.random(length)
       }
    }
 })

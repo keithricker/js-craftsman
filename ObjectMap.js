@@ -430,11 +430,11 @@ function ObjectMap(...arg) {
       return thisMerge
    }
    ObjMap.prototype[Symbol.toStringTag] = "ObjectMap"
-   ObjMap.prototype['get'] = function(ky,vl) { 
+   ObjMap.prototype['get'] = function get(ky,vl) { 
       let res = this['<entries>'].filter(ent => (ky && ky !== '*') ? ent.key === ky : vl && ent.value === vl)
       return res.length < 2 ? res[0] : res 
    }
-   ObjMap.prototype['set'] = (ky,vl) => {
+   ObjMap.prototype['set'] = function set(ky,vl) {
       write(this['<object>'],ky,vl)
    }
    Object.setPrototypeOf(ObjMap.prototype,Object.prototype)

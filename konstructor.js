@@ -46,7 +46,7 @@ const konstructor = klass('konstructor').extends(Object)
          if (thiss === konstructor || thiss.constructor.name === 'konstructor') return Object
          if (!thiss || thiss === Global) return
          function extendz(ex) {
-            if (TypeOf(thiss) === thiss.constructor.name && thiss.hasOwnProperty('constructor')) return
+            if (TypeOf(thiss) === thiss.constructor.name) return
             if (ex) { 
                konstructor.define(thiss.constructor,'extends',ex)
                Object.setPrototypeOf(thiss.constructor.prototype,ex.prototype)
@@ -120,23 +120,26 @@ const konstructor = klass('konstructor').extends(Object)
          return write.set(this,...arg) 
       }
       integrate(trg,src,exc) {
-         trg = !exc && TypeOf(src,'String','Array','Undefined') && TypeOf(src !== TypeOf(trg)) ? this : trg
-         exc = arguments.length === 3 && exc || trg === this && src || []
-         src = trg === this ? trg : src
-         integrate(trg,src,exc)     
+         src = (!exc && TypeOf(src,'String','Array','Undefined')) ? trg : src
+         trg = src === trg ? this : trg
+         exc = arguments.length === 3 ? exc : ((TypeOf(src) === 'String' && Object(src) !== src) || (TypeOf(src) === 'Array' && TypeOf(trg) !== 'Array')) ? src : ['__proto__']
+         return integrate(trg,src,exc)     
       }
       get prototype() {
          if (!this || this === Global || this === konstructor || this.constructor.name === 'konstructor' || this.name && this.name === 'konstructor') return  
-         console.log('peg')
          let thiss = this
          let prototype = (prot) => { 
-            console.log('hey',thiss)
             if (!thiss) return undefined 
             if (!prot) return Objekt.proto.get(thiss)
             if (TypeOf(thiss) === thiss.constructor.name && thiss.hasOwnProperty('constructor'))
-            Object.setPrototypeOf(thiss,Object.create(Objekt.proto.get(thiss)))
-            Properties(Objekt.proto.get(thiss),'function',{enumerable:false, writable:false,configurable:true})(Objekt.proto.get(thiss),prot)
-            return Objekt.proto.get(thiss)
+               Object.setPrototypeOf(thiss,Object.create(Objekt.proto.get(thiss)))
+
+            let thisProto = Objekt.proto.get(thiss)
+            if (!Objekt.proto.get(thisProto)) {
+               thisProto = Objekt.proto.set({},thisProto)
+            }
+            Properties(thisProto,'function',{enumerable:false, writable:false,configurable:true})(thisProto,prot)
+            return thisProto
          }
          integrate.extend(prototype,Objekt.proto.get(thiss),thiss)
          prototype.set = (x) => proto.set(thiss,x)

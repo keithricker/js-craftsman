@@ -174,9 +174,9 @@ const klass = (function() {
 
             const invoke = () => {
                let returnVal
-               thiss.newTarget = ('super' in thiss || 'Super' in thiss)
+               if (thiss) thiss.newTarget = ('super' in thiss || 'Super' in thiss)
                // If there is no new target we just call the function
-               if (!thiss.newTarget && !newTarget)
+               if (!thiss || (!thiss.newTarget && !newTarget))
                   thiss = func(...arg)
             
                // If "new" this function was called directly
