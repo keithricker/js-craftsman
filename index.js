@@ -1,11 +1,11 @@
-const { Objekt } = require('./module/Objekt')
-const konstructor = require('./module/konstructor')
-const { Mirror, mirrors } = require('./module/Mirror')
-const Chars = require('./module/Chars')
-const funktion = require('./module/funktion')
-const { history, Lineage } = require('./module/utils')
-const klass = require('./module/klass')
-const Tree = require('./module/Tree')
+const { Objekt } = require('./Objekt')
+const konstructor = require('./konstructor')
+const { Mirror, mirrors } = require('./Mirror')
+const Chars = require('./Chars')
+const funktion = require('./funktion')
+const { history, Lineage } = require('./utils')
+const klass = require('./klass')
+const Tree = require('./Tree')
 
 exports.Objekt = Objekt
 exports.konstructor = konstructor
