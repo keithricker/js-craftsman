@@ -185,6 +185,10 @@ const klass = (function() {
                   thiss.constructor = cls
                }
                let priv = new Mirror({},vars.template.private,thiss,false)
+               let mir = mirrors.get(priv)
+               mir['<handler>'].ownKeys = function(target) {
+                  return {}
+               }
                instanceVars.set(thiss,priv); 
                write(thiss, '{{vars}}', { get: function() { return instanceVars(thiss) }, enumerable:false },null,null,false)
 

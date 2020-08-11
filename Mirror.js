@@ -1,4 +1,4 @@
-const { TypeOf, defined, FrailMap, history, tryCatch, write } = require('./utils')
+const { TypeOf, defined, FrailMap, history, tryCatch, write, simpleMerge } = require('./utils')
 const mirrors = new FrailMap
 const { integrate, clone, equivalent, deleteProperty } = require('./Objekt')
 const deleteProp = deleteProperty
@@ -61,7 +61,9 @@ class Mirror {
             return getReturnVal()
          }
       }
-      Object.setPrototypeOf(handler,this)
+      Object.setPrototypeOf(handler,simpleMerge({},this))
+      Object.setPrototypeOf(Object.getPrototypeOf(handler),simpleMerge({},Object.getPrototypeOf(this)))
+      Object.defineProperty(this,'<handler>',{value:handler,enumerable:false,writable:false,configurable:true})
       let prox = new Proxy(target,handler)
       mirrors.set(prox,this)
       if (backup) {
@@ -78,6 +80,7 @@ class Mirror {
      let type = this['<type>']
      trg = this['<target>']; let src=this.extensions; let dest = this['<destructive>']; let bind=this['<bind>']
      trg = (dest && src.length > 2) ? bind || src.get(prop) || trg : src.length < 3 ? defined(src.get(prop)) ? src.get(prop) : src[0] : !dest && src[0]
+     console.log('writing')
      return write(trg,prop,val,null,bind)
   }
   deleteProperty(trg, prop) {

@@ -5,6 +5,7 @@ const proto = { get:Object.getPrototypeOf, set:Object.setPrototypeOf }
 const { Mirror } = require('./Mirror')
 
 let brk
+let extensions = new FrailMap
 const konstructor = klass('konstructor').extends(Object)
 .constructor(function(thiss,type) {
    if (thiss && Objekt.proto.get(thiss).constructor.name === 'konstructor') return thiss
@@ -21,7 +22,9 @@ const konstructor = klass('konstructor').extends(Object)
       konstructor.define(extended,'super',{ get: function() { return klass.Super(type === 'class' ? thiss : thiss.constructor) }})
       Object.defineProperty(extended,'descriptors',{get: function descriptors() { return Objekt.descriptors(bind) }})
    }
-   proto.set(extended,{constructor:instance.constructor})
+   proto.set(extended,{ constructor:instance.constructor })
+   if (!extensions.get(bind))
+      extensions.set(bind,extended)
    return extended 
 })
 .template(() => {
@@ -70,6 +73,14 @@ const konstructor = klass('konstructor').extends(Object)
          return Properties(thiss,'function',{enumerable:true,writable:true,configurable:true})
          // integrate.extend(properties,thiss,thiss,['properties','descriptors','__proto__']);
          // return new Proxy(properties,Mirror.handlers.clone(thiss,konstructor.define))
+      }
+      get private() {
+         let thiss = this
+         let vars = extensions.get(thiss)
+         if (vars) {
+            if (!thiss['{{vars}}']) Object.defineProperty(thiss,'{{vars}}',{ value:vars['{{vars}}'],enumerable:false,writable:false,configurable:true })
+            return Properties(vars['{{vars}}'],'function',{enumerable:false, writable:false,configurable:true})
+         }
       }
       get static() {
          let constr = this.constructor; if (constr.name === 'konstructor') return
