@@ -55,10 +55,10 @@ a more flexible Map
 ```
 const tree = new Tree(
 {key:'test1 key', value:'test1 value'},
-{key:'test2 key', value:'test2 value'})
+{key:'test2 key', value:**'test2 value'**})
 
 const test1 = tree('test1 key')
-const test2 = tree.query(null,'test2 value')
+const test2 = tree.query(null,**'test2 value'**)
 ```
 - Simplified access to entries. Iterate through entries as key/value pairs; i.e. object.key, object.value. Direct access to Map items (no "hiding" them). Directly alter a map item through it's array of entries, or via it's normal methods ("set").
 
