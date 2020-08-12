@@ -24,4 +24,32 @@ More detailed and powerful than **instanceof operator**.
 
 ## Mirror
 Proxy generator for extending functionality of objects.
+- **Clone** : Create a virtual copy of an object.
+- **Extend:** : Add functionality to an object while preserving the original object's properties.
+- **Merge:** : Merge properties of multiple objects in a powerful and flexible way.
 
+## funktion
+Highly useful function creation tools.
+- **Tie:** re-usable function binding. Change the "bound" objects unlimited times (regular function binding can only be done once per function).
+- **Creation:** : Easy 'eval' style function creation. Pass in the function name, eval text, and a key/value formatted object with replacements.
+
+## ObjectMap
+A map tool for Objects. 
+- Represents an object as a map, allowing you to use array methods on your object.
+- Iterate through an object as if it were an array.
+Among it's many methods: Loop (forEach), find, filter, reduce, splice
+
+## Tree
+a more flexible Map
+- Most normal Map functionality and methods are availalbe.
+- Simplified creation of Map objects (support for key/value pairs).
+- Improved syntax for finding entries (find by value as well as key).
+```
+const tree = new Tree(
+{key:'test1 key', value:'test1 value'},
+{key:'test2 key', value:'test2 value'})
+
+const test1 = tree('test1 key')
+const test2 = tree.query(null,'test2 value')
+```
+- Simplified access to entries. Iterate through entries as key/value pairs; i.e. object.key, object.value. Direct access to Map items (no "hiding" them). Directly alter a map item through it's array of entries, or via it's normal methods ("set").
