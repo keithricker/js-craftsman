@@ -22,6 +22,14 @@ Advanced tools for existing objects.
 - **lineage:** View a full, traversible inheritence tree for your object. Includes 'prev' and 'next' properties for full traversing.
 More detailed and powerful than **instanceof operator**.
 
+## klass
+A more flexible way of defining a class.
+- Use functions to define classes with greater functionality.
+- Allow functions to inherit as if they were normal classes.
+- Support for private variables that really are private.
+- No *"Must call super constructor in derived class before accessing 'this'"* Go ahead and access properties of *this* if needed, and call the super constructor when it makes sense for your situation.
+- Incredible flexibility for class definition. Define your static and prototype methods within an object template, or simply include them *within the constructor function.* Or use javascript's native class syntax. **konstructor** is great for unusual coding situations where flexibility is needed.
+
 ## Mirror
 Proxy generator for extending functionality of objects.
 - **Clone** : Create a virtual copy of an object.
