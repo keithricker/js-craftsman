@@ -32,7 +32,7 @@ A more flexible way of defining a class.
 
 ## Mirror
 Proxy generator for extending functionality of objects.
-- **Clone** Create a virtual copy of an object.
+- **Clone:** Create a virtual copy of an object.
 - **Extend:** Add functionality to an object while preserving the original object's properties.
 - **Merge:** Merge properties of multiple objects in a powerful and flexible way.
 
