@@ -39,7 +39,7 @@ Proxy generator for extending functionality of objects.
 ## funktion
 Highly useful function creation tools.
 - **Tie:** re-usable function binding. Change the "bound" objects unlimited times (regular function binding can only be done once per function).
-- **Creation:** : Easy 'eval' style function creation. Pass in the function name, eval text, and a key/value formatted object with replacements.
+- **Creation:** Easy 'eval' style function creation. Pass in the function name, eval text, and a key/value formatted object with replacements.
 
 ## ObjectMap
 A map tool for Objects. 
@@ -61,3 +61,11 @@ const test1 = tree('test1 key')
 const test2 = tree.query(null,'test2 value')
 ```
 - Simplified access to entries. Iterate through entries as key/value pairs; i.e. object.key, object.value. Direct access to Map items (no "hiding" them). Directly alter a map item through it's array of entries, or via it's normal methods ("set").
+
+## Chars
+a better find/replace tool for Strings
+- Support for Regex
+- Results returned as array
+- Accepts a callback function (run for each match in the results array)
+- Methods include *find*, *findAll*, *replace*, *replaceAll.*
+
