@@ -65,7 +65,7 @@ const test2 = tree.query(null, 'test2 value')
 ## Chars
 a better find/replace tool for Strings
 - Regex support
-- Results returned as array
+- Result (matches) returned as array
 - Accepts a callback function (run for each match in the results array)
 - Methods include *find*, *findAll*, *replace*, *replaceAll.*
 
