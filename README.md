@@ -32,9 +32,9 @@ A more flexible way of defining a class.
 
 ## Mirror
 Proxy generator for extending functionality of objects.
-- **Clone** : Create a virtual copy of an object.
-- **Extend:** : Add functionality to an object while preserving the original object's properties.
-- **Merge:** : Merge properties of multiple objects in a powerful and flexible way.
+- **Clone** Create a virtual copy of an object.
+- **Extend:** Add functionality to an object while preserving the original object's properties.
+- **Merge:** Merge properties of multiple objects in a powerful and flexible way.
 
 ## funktion
 Highly useful function creation tools.
@@ -64,7 +64,7 @@ const test2 = tree.query(null,'test2 value')
 
 ## Chars
 a better find/replace tool for Strings
-- Support for Regex
+- Regex support
 - Results returned as array
 - Accepts a callback function (run for each match in the results array)
 - Methods include *find*, *findAll*, *replace*, *replaceAll.*
