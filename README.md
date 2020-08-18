@@ -24,6 +24,8 @@ Advanced tools for existing objects.
 - **lineage:** View a full, traversible inheritence tree for your object. Includes 'prev' and 'next' properties for full traversing.
 More detailed and powerful than **instanceof operator**.
 
+[More on Objekt](https://github.com/keithricker/js-craftsman/wiki/Objekt)
+
 ## klass
 A more flexible way of defining a class.
 - Use functions to define classes with greater functionality.
@@ -32,22 +34,30 @@ A more flexible way of defining a class.
 - No *"Must call super constructor in derived class before accessing 'this'"* Go ahead and access properties of *this* if needed, and call the super constructor when it makes sense for your situation.
 - Incredible flexibility for class definition. Define your static and prototype methods within an object template, or simply include them *within the constructor function.* Or use javascript's native class syntax. **konstructor** is great for unusual coding situations where flexibility is needed.
 
+[More on klass](https://github.com/keithricker/js-craftsman/wiki/klass)
+
 ## Mirror
 Proxy generator for extending functionality of objects.
 - **Clone:** Create a virtual copy of an object.
 - **Extend:** Add functionality to an object while preserving the original object's properties.
 - **Merge:** Merge properties of multiple objects in a powerful and flexible way.
 
+[More on Mirror](https://github.com/keithricker/js-craftsman/wiki/Mirror)
+
 ## funktion
 Highly useful function creation tools.
 - **Tie:** re-usable function binding. Change the "bound" objects unlimited times (regular function binding can only be done once per function).
 - **Creation:** Easy 'eval' style function creation. Pass in the function name, eval text, and a key/value formatted object with replacements.
+
+[More on funktion](https://github.com/keithricker/js-craftsman/wiki/funktion)
 
 ## ObjectMap
 A map tool for Objects. 
 - Represents an object as a map, allowing you to use array methods on your object.
 - Iterate through an object as if it were an array.
 Among it's many methods: Loop (forEach), find, filter, reduce, splice
+
+[More on ObjectMap](https://github.com/keithricker/js-craftsman/wiki/ObjectMap)
 
 ## Tree
 a more flexible Map
@@ -63,6 +73,8 @@ const test1 = tree('test1 key')
 const test2 = tree.query(null, 'test2 value')
 ```
 - Simplified access to entries. Iterate through entries as key/value pairs; i.e. object.key, object.value. Direct access to Map items (no "hiding" them). Directly alter a map item through it's array of entries, or via it's normal methods ("set").
+
+[More on Tree](https://github.com/keithricker/js-craftsman/wiki/Tree)
 
 ## Chars
 a better find/replace tool for Strings
