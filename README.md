@@ -49,7 +49,7 @@ Among it's many methods: Loop (forEach), find, filter, reduce, splice
 
 ## Tree
 a more flexible Map
-- Most normal Map functionality and methods are availalbe.
+- Most normal Map functionality and methods are available.
 - Simplified creation of Map objects (support for key/value pairs).
 - Improved syntax for finding entries (find by value as well as key).
 ```
