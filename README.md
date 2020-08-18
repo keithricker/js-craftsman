@@ -10,6 +10,8 @@ is a builder of objects.
 - Easily define advanced properties like writability, enumerability, etc.
 - Support for private attributes and initializer functions.
 - Full control over "super" functions (not forced to invoke before accessing "this"). Use it how you wish.
+
+[More on konstructor](https://github.com/keithricker/js-craftsman/wiki/konstructor)  
  
 ## Objekt
 Advanced tools for existing objects.
