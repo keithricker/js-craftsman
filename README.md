@@ -83,3 +83,4 @@ a better find/replace tool for Strings
 - Accepts a callback function (run for each match in the results array)
 - Methods include *find*, *findAll*, *replace*, *replaceAll.*
 
+[Mored on Chars](https://github.com/keithricker/js-craftsman/wiki/Chars)
