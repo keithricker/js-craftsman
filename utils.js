@@ -298,10 +298,13 @@ function write(trg,key,val,src,bind,backup=true) {
       }
    }
    if ((typeof desc.get === 'function' || typeof desc.set === 'function')) {
+      desc.writable = desc.writable || false;
+      desc.configurable = desc.configurable || true
+      desc.enumerable = desc.enumerable || false
       if (typeof desc.get !== 'function')
-         return write.set(trg,key,desc.set,src,bind)
+         return write.set(trg,key,desc,src,bind)
       if (typeof desc.set !== 'function')
-         return write.get(trg,key,desc.get,src,bind)
+         return write.get(trg,key,desc,src,bind)
       write.get(trg,key,desc.get,src,bind)
       write.set(trg,key,desc.set,src,bind)
       return trg
@@ -316,12 +319,16 @@ function write(trg,key,val,src,bind,backup=true) {
 const getSets = new WeakMap
 write.get = function(obj,key,val,src=null,bind=null) {
    if (src && val === null) val = src[key]
-   let desc = Object.getOwnPropertyDescriptor(obj,key); 
+   let objDesc = Object.getOwnPropertyDescriptor(obj,key); 
+   let desc = objDesc
    if (!desc && src) desc = Object.getOwnPropertyDescriptor(src,key)
-   let descKey
+   if (('get' in val) && isDescriptor(val)) {
+      desc = val; val = val.get
+   }
+   let descKey;
    descKey = desc && getSets.has(desc.get) ? desc.get : desc && getSets.has(desc.set) && desc.set
-
-   if (bind) tryCatch(() => { val.call(bind); bind = bind; },() => bind = null )
+   
+   if (bind) tryCatch(() => { val.call(bind); bind = bind; },() => bind = null)
    if (!bind) tryCatch(() => { val.call(obj); bind = obj },() => bind = null)
    if (src && !bind) { 
       let cb = () => { val.call(src); bind=src; return src }
@@ -334,17 +341,21 @@ write.get = function(obj,key,val,src=null,bind=null) {
             getter = val
          return getter.call(bind) 
       }}[key]
-      if (!(desc && desc.configurable === false))
+      if (!(objDesc && objDesc.configurable === false))
          Object.defineProperty(obj,key, { get: descKey,set: {[key]: function(x) { let setter = getSets.get(descKey).set; return setter.call(bind,x) }}[key]})
    }
    let descSet = getSets.get(descKey) ? getSets.get(descKey).set : {[key]: function() { return '' } }[key]
    getSets.set(descKey,{ set:descSet, get:val })
    if (bind) getSets.get(descKey).binder = bind
+   return obj
 }
 let setVal
 write.set = function(obj,key,val,src=null,bind=null) {
    let desc = Object.getOwnPropertyDescriptor(obj,key); 
    if (!desc && src) desc = Object.getOwnPropertyDescriptor(src,key) 
+   if (('set' in val) && isDescriptor(val)) {
+      desc = val; val = val.set
+   }
    let descKey; bind = bind || obj
    descKey = desc && getSets.has(desc.get) ? desc.get : desc && getSets.has(desc.set) ? desc.set : undefined
    if (!descKey) {

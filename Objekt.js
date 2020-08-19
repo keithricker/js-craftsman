@@ -33,22 +33,29 @@ const Objekt = (function() {
          return nT
       }
       static create(prot,descr,blankSlate) {
+         let things
+         if (descr === 'things') { descr = undefined; things = true }
          let thiss = ObjektClass
          const konstruct = () => {
             let obj, newDesc = {}; 
-            obj = prot['<object>'] || attributes(prot) && attributes(prot)['<object>'] 
+            obj = prot['<object>'] || attributes(prot) ? attributes(prot)['<object>'] : undefined
             obj = ((typeof descr === 'object' || typeof descr === 'function') && !areDescriptors(descr)) ? descr : obj
+
             descr = descr && areDescriptors(descr) ? descr : areDescriptors(prot) ? prot : descr && thiss.descriptors(descr) || obj && thiss.descriptors(obj) || undefined
             if (!obj) {
                if (blankSlate) obj = Object.create(Object.getPrototypeOf(blankSlate))
-               else if (prot) obj = Object.create(Object.getPrototypeOf(prot))
+               else if (prot) obj = Object.create(prot)
             }
             if (areDescriptors(prot)) 
                prot = obj ? thiss.proto.get(obj) : thiss.proto.get(prot)
-            let constr = obj !== arguments[1] ? obj.constructor : obj.TypeOf
-            constr = constr || prot.constructor
+            
+            let constr = obj !== arguments[1] ? obj.constructor : obj.TypeOf ? classTypeOf.class(obj.TypeOf) : undefined
+            constr = constr || prot.constructor || Object
 
-            blankSlate = blankSlate || thiss.proto.set(new (classTypeOf.class(constr))(),prot)
+            if (!blankSlate) {
+               blankSlate = new (classTypeOf.class(constr))()
+               thiss.proto.set(blankSlate,prot)
+            }
             if (!descr) return blankSlate
 
             if (TypeOf(descr) === 'Entries') {
@@ -285,6 +292,7 @@ const Objekt = (function() {
             return ObjektClass.symbol(thiss,...arg)
          }
          symbol.set = function(...arg) { return OC.symbol.set(thiss,...arg) }
+         symbol.value = function(...arg) { return OC.symbol.value(thiss,...arg) }
          symbol.for = function(...arg) { return OC.symbol.for(thiss,...arg) }
          return symbol
       }
@@ -333,10 +341,13 @@ const Objekt = (function() {
       if (typeof name !== 'undefined') return name
       return sym.toString().match(reg) ? sym.toString().match(reg)[1] : sym.toString()
    }})
+   ObjektClass.symbol.value = function(obj,name) { 
+      let find = ObjektClass.symbol(obj,name)
+      return obj[find]
+   }
    ObjektClass.symbol.set = function(obj,name,val,fr) { 
       let newSymbol = fr ? Symbol.for(name) : typeof name === 'symbol' ? name : Symbol(name)
       obj[newSymbol] = val;
-      console.log('hey',obj) 
       return newSymbol
    }
    ObjektClass.symbol.for = function(...arg) { return ObjektClass.symbol.set(...arg,true) }
@@ -442,12 +453,17 @@ integrate.mirror = function(target,source,bind,backup=false) {
    Object.setPrototypeOf(target,boundProto)
    return target
 }
+history.save = function save(obj) {
+   Objekt.clone(obj)
+   return history.get(obj)
+}
 module.exports = { 
    Objekt, 
    integrate, 
    define:Objekt.define, 
    create:Objekt.create,
    clone:Objekt.clone,
+   history:history,
    equivalent:Objekt.equivalent,
    deleteProperty:Objekt.deleteProperty,
    deleteProperties:Objekt.deleteProperties

@@ -176,7 +176,7 @@ const klass = (function() {
                let returnVal
                if (thiss) thiss.newTarget = ('super' in thiss || 'Super' in thiss)
                // If there is no new target we just call the function
-               if (!thiss || (!thiss.newTarget && !newTarget))
+               if (!thiss || (!thiss.newTarget && !newTarget)) 
                   thiss = func(...arg)
             
                // If "new" this function was called directly
@@ -190,7 +190,10 @@ const klass = (function() {
                   return {}
                }
                instanceVars.set(thiss,priv); 
-               write(thiss, '{{vars}}', { get: function() { return instanceVars(thiss) }, enumerable:false },null,null,false)
+               if (!('{{vars}}' in thiss) || (('{{vars}}' in thiss) && thiss['{{vars}}'] === undefined)) {
+                  delete thiss['{{vars}}']
+                  Object.defineProperty(thiss,'{{vars}}', { get: function() { return instanceVars(thiss) }, configurable:true, enumerable:false });
+               }
 
                if (!cls || !func)
                   returnVal = newTarget ? thiss : void 0
@@ -329,7 +332,22 @@ const klass = (function() {
             const konstruct = { new: (...ar) => {
                let backup = (ar[0] === backupKey) ? ar.shift() : false
                arg = ar.length > 0 ? ar : arg
+               let privs = instanceVars.get(vars.thiss)
                if (!vars.thiss.Super && vars.thiss.super) vars.thiss.Super = vars.thiss.super
+               if (!privs) {
+                  let priv = new Mirror({},vars.template.private,vars.thiss,false)
+                  let mir = mirrors.get(priv)
+                  mir['<handler>'].ownKeys = function(target) {
+                     return {}
+                  }
+                  instanceVars.set(vars.thiss,priv)
+                  privs = instanceVars.get(vars.thiss)
+               } 
+               if (!('{{vars}}' in vars.thiss) || (('{{vars}}' in vars.thiss) && vars.thiss['{{vars}}'] === undefined)) {
+                  delete vars.thiss['{{vars}}']
+                  Object.defineProperty(vars.thiss,'{{vars}}', { get: function() { return privs }, configurable:true, enumerable:false });
+               }
+               let privateVars = Object.getOwnPropertyDescriptor(vars.thiss,'{{vars}}')
                try { 
                   let kFunc = vars.constructor || vars.klassFunc
                   let res = kFunc.call(vars.thiss,...arg) || vars.thiss;
@@ -343,9 +361,12 @@ const klass = (function() {
                         vars.thiss = sup(...getSuperArgs()); 
                      }
                      vars.thiss.Super = sup
+                     Object.defineProperty(vars.thiss,'{{vars}}',privateVars)
                      res = kFunc.call(vars.thiss,...arg) || sup(...getSuperArgs())
                   }
+
                   let thiss = vars.thiss
+
                   if (proto.get(res).constructor !== proto.get(thiss).constructor) {
                      if (TypeOf(res) === TypeOf(thiss) && proto.get(res).constructor.className === TypeOf(res)) {
                         proto.set(res,thiss.constructor.prototype)  
@@ -363,7 +384,12 @@ const klass = (function() {
 
                   if (!res.constructor || !res['{{vars}}']) {
                      res.constructor = thiss.constructor
-                     tryCatch(() => { if (!res['{{vars}}']) write(res,'{{vars}}',{ get: function() { return instanceVars(thiss) },enumerable:false },null,null,false) })
+                     tryCatch(() => { 
+                        if (!('{{vars}}' in res) || ('{{vars}}' in res) && res['{{vars}}'] === undefined) {
+                           delete res['{{vars}}']
+                           Object.defineProperty(res,'{{vars}}',{ get: function() { return instanceVars(thiss) },enumerable:false, configurable:true }) 
+                        }
+                     })
                      tryCatch(() => { if (!res['<konstructor>']) write(res,'<konstructor>',{ get: function() { return thiss['<konstructor>'] },enumerable:false },null,null,false) })
                   }
                   if (!history.has(res) && !backup) {

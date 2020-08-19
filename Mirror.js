@@ -14,7 +14,11 @@ class Mirror {
          constructor(...arr) {
             super(...arr)
             this.add = function(ex) { if (TypeOf(ex) !== 'Array') ex = [ex]; ex.forEach(x => this.push(x)) }
-            this.remove = function(ex) { if (ex === this[0]) return; this.splice(this.indexOf(ex),1) }
+            this.remove = function(ex) { 
+               if (equivalent(ex,this[0])) return; 
+               let thisIndex; this.forEach((item,ind) => { if (equivalent(item,ex)) thisIndex = ind })
+               this.splice(thisIndex,1) 
+            }
          }
          get(key) { 
             if (!key) return undefined
@@ -80,7 +84,6 @@ class Mirror {
      let type = this['<type>']
      trg = this['<target>']; let src=this.extensions; let dest = this['<destructive>']; let bind=this['<bind>']
      trg = (dest && src.length > 2) ? bind || src.get(prop) || trg : src.length < 3 ? defined(src.get(prop)) ? src.get(prop) : src[0] : !dest && src[0]
-     console.log('writing')
      return write(trg,prop,val,null,bind)
   }
   deleteProperty(trg, prop) {

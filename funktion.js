@@ -29,8 +29,11 @@ args.map = function(args) {
  
 let ties = new FrailMap()
 function funktion(func,funcName,replace={}) { 
-   if (typeof func !== 'function') {
+   if ((typeof func !== 'function') && funcName.toString) {
       replace = funcName; funcName = func; func = undefined
+   }
+   else if ((typeof func !== 'function') && func.toString) {
+      replace = func; funcName = replace.name; func = undefined
    }
    let tie = null
    var name = funcName || func.name

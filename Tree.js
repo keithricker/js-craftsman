@@ -46,10 +46,10 @@ const Tree = (function() {
                if (!obj.get(prop)) {
                   if (Map.prototype[prop]) {
                      let map = new Map(obj['<entries>'])
-                     return function(...arg) { 
+                     return { [prop]: function(...arg) { 
                         let res = map[prop](...arg) 
                         obj.update(map); return res
-                     }
+                     }}[prop]
                   }
                   if (Array.prototype[prop]) {
                      return Array.prototype[prop].bind(obj['<limbs>'])
