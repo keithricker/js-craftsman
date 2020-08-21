@@ -19,6 +19,8 @@ const klass = (function() {
    let klassVars = new FrailMap
    let instanceVars = new FrailMap
 
+   var addVars
+
    const klassFunction = function klass(className,ext,func,temp) {
 
       const argmnts = [...arguments]
@@ -68,6 +70,12 @@ const klass = (function() {
          }
          tmp = { ...tmp }; 
          return tmp
+      }
+      addVars = function(thiss,src) {
+         if (!('{{vars}}' in thiss) || (('{{vars}}' in thiss) && thiss['{{vars}}'] === undefined)) {
+            delete thiss['{{vars}}']
+            Object.defineProperty(thiss,'{{vars}}', { get: function() { return src }, configurable:true, enumerable:false });
+         }
       }
       const initialVars = getVariables(vars)
       vars = { ...vars, ...initialVars }
@@ -176,9 +184,9 @@ const klass = (function() {
                let returnVal
                if (thiss) thiss.newTarget = ('super' in thiss || 'Super' in thiss)
                // If there is no new target we just call the function
-               if (!thiss || (!thiss.newTarget && !newTarget)) 
+               if (!thiss || (!thiss.newTarget && !newTarget))  {
                   thiss = func(...arg)
-            
+               }
                // If "new" this function was called directly
                else if (!thiss.newTarget) {
                   thiss = new cls(...arg)
@@ -190,10 +198,7 @@ const klass = (function() {
                   return {}
                }
                instanceVars.set(thiss,priv); 
-               if (!('{{vars}}' in thiss) || (('{{vars}}' in thiss) && thiss['{{vars}}'] === undefined)) {
-                  delete thiss['{{vars}}']
-                  Object.defineProperty(thiss,'{{vars}}', { get: function() { return instanceVars(thiss) }, configurable:true, enumerable:false });
-               }
+               addVars(thiss,instanceVars(thiss))
 
                if (!cls || !func)
                   returnVal = newTarget ? thiss : void 0
@@ -201,7 +206,9 @@ const klass = (function() {
                else if (newTarget) {
                   if (!thiss.newTarget) {
                      returnVal = thiss
-                  } else { returnVal = new cls(...arg) }
+                  } else { 
+                     returnVal = new cls(...arg) 
+                  }
                }
                else if (thiss.newTarget)
                   returnVal = func.call(thiss,...arg)
@@ -209,7 +216,9 @@ const klass = (function() {
                if (thiss.newTarget && !kvars.initialized)
                   kvars.init(vars.klassFunc,thiss); 
 
-               try { return returnVal || !thiss.newTarget ? thiss : func.call(thiss,...arg) } finally { delete thiss.newTarget; thiss.constructor = func }
+               if (!returnVal) returnVal = (!thiss.newTarget) ? thiss : func.call(thiss,...arg)
+               addVars(returnVal,instanceVars(thiss))
+               try { return returnVal  } finally { delete thiss.newTarget; thiss.constructor = func }
             }
             let arch = backup ? invoke() : undefined
             backup = false
@@ -343,13 +352,11 @@ const klass = (function() {
                   instanceVars.set(vars.thiss,priv)
                   privs = instanceVars.get(vars.thiss)
                } 
-               if (!('{{vars}}' in vars.thiss) || (('{{vars}}' in vars.thiss) && vars.thiss['{{vars}}'] === undefined)) {
-                  delete vars.thiss['{{vars}}']
-                  Object.defineProperty(vars.thiss,'{{vars}}', { get: function() { return privs }, configurable:true, enumerable:false });
-               }
+               addVars(vars.thiss,instanceVars(vars.thiss))
                let privateVars = Object.getOwnPropertyDescriptor(vars.thiss,'{{vars}}')
                try { 
                   let kFunc = vars.constructor || vars.klassFunc
+                  vars.thiss.hello = 'jello'
                   let res = kFunc.call(vars.thiss,...arg) || vars.thiss;
 
                   if (superArgs) {   
@@ -385,10 +392,7 @@ const klass = (function() {
                   if (!res.constructor || !res['{{vars}}']) {
                      res.constructor = thiss.constructor
                      tryCatch(() => { 
-                        if (!('{{vars}}' in res) || ('{{vars}}' in res) && res['{{vars}}'] === undefined) {
-                           delete res['{{vars}}']
-                           Object.defineProperty(res,'{{vars}}',{ get: function() { return instanceVars(thiss) },enumerable:false, configurable:true }) 
-                        }
+                        addVars(res,instanceVars(thiss))
                      })
                      tryCatch(() => { if (!res['<konstructor>']) write(res,'<konstructor>',{ get: function() { return thiss['<konstructor>'] },enumerable:false },null,null,false) })
                   }

@@ -2,7 +2,7 @@ const { FrailMap,TypeOf,Global,simpleMerge,write,history,Lineage,reflect } = req
 const klass = require('./klass')
 const { Objekt, integrate } = require('./Objekt'); const descriptor = Object.getOwnPropertyDescriptor
 const proto = { get:Object.getPrototypeOf, set:Object.setPrototypeOf }
-const { Mirror } = require('./Mirror')
+const { Mirror, mirrors } = require('./Mirror')
 
 let brk
 let extensions = new FrailMap
@@ -28,7 +28,7 @@ const konstructor = klass('konstructor').extends(Object)
    return extended 
 })
 .template(() => {
-   const inits = new FrailMap
+   var inits = new FrailMap
    
    class konstructor {
       static define(obj,props,...arg) {
@@ -56,7 +56,7 @@ const konstructor = klass('konstructor').extends(Object)
             }
          }
          return extendz
-      }           
+      }      
       define(prop,def) {
          let thiss = this
          return konstructor.define(thiss,prop,def,true,true,true)
@@ -136,6 +136,31 @@ const konstructor = klass('konstructor').extends(Object)
          exc = arguments.length === 3 ? exc : ((TypeOf(src) === 'String' && Object(src) !== src) || (TypeOf(src) === 'Array' && TypeOf(trg) !== 'Array')) ? src : ['__proto__']
          return integrate(trg,src,exc)     
       }
+      get init() {
+         const thiss = this
+         if (thiss === Global) return
+         function initz(func) {
+            let vars = thiss['{{vars}}']
+            let initz = vars ? vars.init : inits(thiss.constructor)
+            if (initz && initz.init) return
+
+            func.call(extensions.get(thiss))
+            
+            if (vars) {
+               if (!vars.init)
+                  vars.init = {init:true,}
+               vars.init.init = true;
+            }
+            if (!inits(thiss.constructor)) inits.set(thiss.constructor,{init:true})
+            inits(thiss.constructor).init = true
+         }
+         return initz
+      }
+      set init(func) {
+         if (this === Global) return
+         console.log('egt',extensions.get(this))
+         extensions.get(this).init.call(this,func)
+      }
       get prototype() {
          if (!this || this === Global || this === konstructor || this.constructor.name === 'konstructor' || this.name && this.name === 'konstructor') return  
          let thiss = this
@@ -156,20 +181,6 @@ const konstructor = klass('konstructor').extends(Object)
          prototype.set = (x) => proto.set(thiss,x)
          delete prototype.length; delete prototype.name;
          return Mirror.clone(prototype,Objekt.proto.get(thiss),konstructor.define)
-      }
-      set init(func) { 
-         let vars = this['{{vars}}']
-         let initz = vars ? vars.init : inits(this)
-         if (initz && initz.init) return
-         func.call(new konstructor(this.constructor))
-         
-         if (vars) {
-            if (!vars.init)
-               vars.init = {init:true,}
-            vars.init.init = true;
-         }
-         if (!inits(this)) inits.set(this,{init:true})
-         inits(this).init = true
       }
       get propertyNames() { if (!this || this === Global || this === konstructor || (this.hasOwnProperty('constructor') && this.constructor.name === 'konstructor')) return; return Reflect.ownKeys(this) }
       get descriptors() { if (!this || this === Global || this === konstructor || (this.hasOwnProperty('constructor') && this.constructor.name === 'konstructor')) return; return Objekt.descriptors(this) }
@@ -249,3 +260,4 @@ const konstructor = klass('konstructor').extends(Object)
    return konstructor 
 })
 module.exports = konstructor
+

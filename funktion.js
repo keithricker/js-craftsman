@@ -1,4 +1,4 @@
-const { TypeOf, FrailMap, simpleMerge, history, Global } = require('./utils')
+const { TypeOf, FrailMap, simpleMerge, history, Global, tryCatch } = require('./utils')
 
 function args(func) {
    return (func + '')
@@ -29,14 +29,21 @@ args.map = function(args) {
  
 let ties = new FrailMap()
 function funktion(func,funcName,replace={}) { 
-   if ((typeof func !== 'function') && funcName.toString) {
+   if ((typeof func !== 'function') && funcName && typeof funcName.toString === 'string') {
       replace = funcName; funcName = func; func = undefined
    }
    else if ((typeof func !== 'function') && func.toString) {
       replace = func; funcName = replace.name; func = undefined
+   } else if (typeof func === 'function') {
+      let obj; try { obj = func() } catch {}
+      if (obj && obj.toString && typeof obj.toString === 'string') {
+         replace = obj; funcName = obj.name; func = undefined
+      }
    }
-   let tie = null
-   var name = funcName || func.name
+
+   let tie = replace.tie || null
+   var name = funcName;
+   if (!name && typeof func !== 'undefined') name = func.name
 
    let defaultTemplate = { 
       func, name, tie, ties, toString:null, Global:Global, ...replace 
@@ -64,6 +71,7 @@ function funktion(func,funcName,replace={}) {
             toStr = toStr.replace(new RegExp(key,'g'),repl[key])
             delete repl[key]
          }
+         if (repl[key] === null) delete repl[key]
       })
       let keys = [...Object.keys(repl),toStr]
       const fun = new Function(...keys)(...Object.values(repl))

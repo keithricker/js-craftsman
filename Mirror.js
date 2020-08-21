@@ -139,8 +139,11 @@ class Mirror {
         newProx = integrate.mirror(blank,obj,bind)
      } 
      newProx = newProx || blank
-     let returnVal = new Proxy(newProx,this.handlers.clone(bind,method))   
-     return returnVal    
+     let handler = this.handlers.clone(bind,method)
+     let mirr = new this(newProx,obj,bind,[])
+     let mirrHandler = mirrors.get(mirr)['<handler>']
+     simpleMerge(mirrHandler,handler)
+     return mirr
   }
 }
 function backup(trg,callback) {

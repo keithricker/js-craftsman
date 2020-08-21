@@ -72,7 +72,10 @@ const size = function(thing, ...exclude) {
 function simpleMerge(trg,src,exc=[],bind,defaults) {
    Reflect.ownKeys(src).forEach(pr => {
       let trgDesc = Object.getOwnPropertyDescriptor(trg,pr); let desc
-      if ((trgDesc && trgDesc.configurable === false && trgDesc.writable === false) || exc.includes(pr)) return
+      if (trgDesc && trgDesc.configurable === false) {
+          if (trgDesc.writable === false || exc.includes(pr)) return
+          try { delete trg[pr] } catch { return }
+      }
       const val = Reflect.get(src,pr,bind||src)
       if (isDescriptor(val)) {
          desc = src[pr];
@@ -83,7 +86,7 @@ function simpleMerge(trg,src,exc=[],bind,defaults) {
          if (typeof desc.get === 'function' && bind) desc.get = desc.get.bind(bind)
          if (typeof desc.set === 'function' && bind) desc.set = desc.set.bind(bind)
       }
-      Object.defineProperty(trg,pr,desc)
+      tryCatch(() => Object.defineProperty(trg,pr,desc),() => trg[pr] = src[pr])
    })
    return trg	
 }
