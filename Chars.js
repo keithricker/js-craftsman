@@ -1,4 +1,4 @@
-const { hasFunc, validate, history } = require('./utils')
+const { hasFunc, validate, history, TypeOf } = require('./utils')
 const { Objekt } = require('./Objekt')
 const klass = require('./klass')
 const { mirrors } = require('./Mirror')
@@ -74,7 +74,7 @@ const Chars = klass({
             })
             return strg
          }
-         let twoArgs = (arguments.length === 2 && (typeof arguments[0] === 'string' && typeof arguments[1] === 'string')) 
+         let twoArgs = (arguments.length === 2 && ((typeof arguments[0] === 'string' || Array.isArray(arguments[0]) ) && typeof arguments[1] === 'string')) 
          theString = twoArgs ? _with(theString,[arguments[0]],arguments[1]) : theString 
          let mixin1 = {
             with: (replacement) => {

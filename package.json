@@ -1,11 +1,39 @@
 {
-  "name": "js-craftsman",
-  "version": "1.0.2",
+  "_from": "js-craftsman",
+  "_id": "js-craftsman@1.0.5",
+  "_inBundle": false,
+  "_integrity": "sha512-IOdLNjJzk2cL/PgDQQVySo3XJZqvrA6AbKY6ZT6hRwn54BFSYBvxs/jAupscXh1wXibSTtn4YwLLG6721Xw5kw==",
+  "_location": "/js-craftsman",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "js-craftsman",
+    "name": "js-craftsman",
+    "escapedName": "js-craftsman",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/js-craftsman/-/js-craftsman-1.0.5.tgz",
+  "_shasum": "872bd76f5e51fd15ef819be55e972cab1e8253f5",
+  "_spec": "js-craftsman",
+  "_where": "/Users/TravelComputer/Desktop/node_sandbox/node-course/node-server-plus-webpack/client",
+  "author": {
+    "name": "Keith Ricker"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
   "description": "Tools for creating, modifying and traversing objects and classes in javascript",
+  "license": "ISC",
   "main": "index.js",
+  "name": "js-craftsman",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Keith Ricker",
-  "license": "ISC"
+  "version": "1.0.5"
 }

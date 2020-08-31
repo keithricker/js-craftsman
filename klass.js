@@ -185,7 +185,7 @@ const klass = (function() {
                if (thiss) thiss.newTarget = ('super' in thiss || 'Super' in thiss)
                // If there is no new target we just call the function
                if (!thiss || (!thiss.newTarget && !newTarget))  {
-                  thiss = func(...arg)
+                  try { thiss = func(...arg) } catch { thiss = new cls(...arg); thiss.constructor = cls }
                }
                // If "new" this function was called directly
                else if (!thiss.newTarget) {

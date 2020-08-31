@@ -121,6 +121,15 @@ function ObjectMap(...arg) {
       get names() { if (this === Global) return; let obj = this['<object>'] || this; return Reflect.ownKeys(obj) }
       get values() { if (this === Global) return; let obj = this['<object>'] || this; return Object.values(obj) }
 //push, modify, unshift, splice, concat
+      eject() { 
+         const obj = this['<object>'] || this
+         let objProto = objects.get(obj) ? objects.get(obj).prototype : Object.getPrototypeOf(obj)
+         let objLin = Lineage(objProto)
+         if (objLin['ObjectMap'])
+            objProto = objLin['ObjectMap'].next.prototype
+         Object.setPrototypeOf(obj,objProto) 
+         return obj
+      }
       concat(merge) {
          if (!this || this === Global) return
          let obj = this['<object>'] || this; let areEnt
@@ -155,6 +164,7 @@ function ObjectMap(...arg) {
          if (!this || this === Global) return
          let obj = this['<object>'] || this
          Reflect.ownKeys(obj).every((key,ind) => {
+            if (key === 'length') return true
             let val = Reflect.get(obj,key,obj)
             if (callback(key,val,obj,ind) === false)
                return false
@@ -304,10 +314,14 @@ function ObjectMap(...arg) {
                Object.defineProperty(cum,key,Object.getOwnPropertyDescriptor(obj,key)); return cum
             } else return cum
          },{})
+
          if (obj.eject) obj.eject()
+
          result = create(Object.getPrototypeOf(obj),result)
+
          Object.setPrototypeOf(result,mixinProtoSet(this,obj))
-         Object.setPrototypeOf(obj,mixinProtoSet(this,obj))
+         Object.defineProperty(Object.getPrototypeOf(result),'<object>',{value:result,enumerable:false,configurable:true})
+         // Object.setPrototypeOf(obj,mixinProtoSet(this,obj))
          return result
       }  
       map(callback) {
@@ -418,7 +432,8 @@ function ObjectMap(...arg) {
       objects.get(obj).prototype = Object.getPrototypeOf(obj)
       const objProto = Object.getPrototypeOf(obj)			
       let thisMerge = simpleMerge({eject() { 
-         let objProto = objects.get(obj).prototype; 
+         obj = this['<object>'] || obj || this
+         let objProto = objects.get(obj) ? objects.get(obj).prototype : Object.getPrototypeOf(obj); 
          let objLin = Lineage(objProto)
          if (objLin['ObjectMap'])
             objProto = objLin['ObjectMap'].next.prototype
@@ -445,16 +460,14 @@ function ObjectMap(...arg) {
    ObjMap = new Mirror(ObjMap,mapFunc);
 
    let newTarget = function konstructor(...ar) { return new ObjMap(...ar) }
-   if (new.target) { 
-      const invoke = () => {
-         let newObjMap = newTarget(...arg)
-         Object.defineProperty(newObjMap,'{{konstructor}}',{value: newTarget,enumerable:false,writable:false,configurable:true})
-         return newObjMap
-      }
-      let newOm = invoke()
-      let backup = invoke()
-      history.set(newOm, {0: backup})
-      return newOm
+   const invoke = () => {
+      let newObjMap = newTarget(...arg)
+      Object.defineProperty(newObjMap,'{{konstructor}}',{value: newTarget,enumerable:false,writable:false,configurable:true})
+      return newObjMap
    }
+   let newOm = invoke()
+   let backup = invoke()
+   history.set(newOm, {0: backup})
+   return newOm
 }
 module.exports = ObjectMap

@@ -7,8 +7,8 @@ const Objekt = (function() {
    const ObjektFunc = function Objekt(...arg) {
       if (new.target) return new ObjektClass(...arg)
       bind = arguments[0] || (this && this !== ObjektFunc && this !== Global && !this instanceof ObjektClass) && this
-      let extended = {constructor:ObjektClass}; Reflect.ownKeys(ObjektClass.prototype).forEach(key => ObjektClass.define(extended,key,null,ObjektClass.prototype,bind))
-      attributes.set(bind,{Objekt:extended})
+      let extended = { constructor:ObjektClass }; Reflect.ownKeys(ObjektClass.prototype).forEach(key => ObjektClass.define(extended,key,null,ObjektClass.prototype,bind))
+      attributes.set(bind,{ Objekt:extended })
       return extended
    }
    
@@ -38,7 +38,8 @@ const Objekt = (function() {
          let thiss = ObjektClass
          const konstruct = () => {
             let obj, newDesc = {}; 
-            obj = prot['<object>'] || attributes(prot) ? attributes(prot)['<object>'] : undefined
+            obj = prot['<object>']
+            if (!obj && attributes(prot)) obj = attributes(prot)['<object>'] || undefined
             obj = ((typeof descr === 'object' || typeof descr === 'function') && !areDescriptors(descr)) ? descr : obj
 
             descr = descr && areDescriptors(descr) ? descr : areDescriptors(prot) ? prot : descr && thiss.descriptors(descr) || obj && thiss.descriptors(obj) || undefined
