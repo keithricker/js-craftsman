@@ -1,6 +1,6 @@
 {
   "_from": "js-craftsman",
-  "_id": "js-craftsman@1.0.5",
+  "_id": "js-craftsman@1.0.6",
   "_inBundle": false,
   "_integrity": "sha512-IOdLNjJzk2cL/PgDQQVySo3XJZqvrA6AbKY6ZT6hRwn54BFSYBvxs/jAupscXh1wXibSTtn4YwLLG6721Xw5kw==",
   "_location": "/js-craftsman",
@@ -35,5 +35,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.0.5"
+  "version": "1.0.6"
 }

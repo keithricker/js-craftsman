@@ -79,6 +79,14 @@ function ObjectMap(...arg) {
       }
    }
 
+   function getProto(obj) { 
+      let objProto = objects.get(obj) ? objects.get(obj).prototype : Object.getPrototypeOf(obj)
+      let objLin = Lineage(objProto)
+      if (objLin['ObjectMap'])
+         objProto = objLin['ObjectMap'].next.prototype
+      return objProto
+   }
+
    let ObjMap = class ObjectMap extends Object {
       constructor(obj,type) {
          if (obj instanceof ObjMap) {
@@ -122,17 +130,14 @@ function ObjectMap(...arg) {
       get values() { if (this === Global) return; let obj = this['<object>'] || this; return Object.values(obj) }
 //push, modify, unshift, splice, concat
       eject() { 
-         const obj = this['<object>'] || this
-         let objProto = objects.get(obj) ? objects.get(obj).prototype : Object.getPrototypeOf(obj)
-         let objLin = Lineage(objProto)
-         if (objLin['ObjectMap'])
-            objProto = objLin['ObjectMap'].next.prototype
+         const obj = this['<modified>'] || this['<object>'] || this
+         let objProto = getProto(obj)
          Object.setPrototypeOf(obj,objProto) 
          return obj
       }
       concat(merge) {
          if (!this || this === Global) return
-         let obj = this['<object>'] || this; let areEnt
+         let obj = this['<modified>'] || this['<object>'] || this; let areEnt
          if (arguments.length > 1) merge = [...arguments]
          if (TypeOf(merge) === 'Map') {
             let toArray = []
@@ -162,7 +167,7 @@ function ObjectMap(...arg) {
       }
       loop(callback) {
          if (!this || this === Global) return
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          Reflect.ownKeys(obj).every((key,ind) => {
             if (key === 'length') return true
             let val = Reflect.get(obj,key,obj)
@@ -173,7 +178,7 @@ function ObjectMap(...arg) {
          return Object.setPrototypeOf(obj,mixinProtoSet(this,obj))
       }  
       find(callback) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          let returnVal
          if (TypeOf(obj,'array')) obj = Object(obj)
          Reflect.ownKeys(obj).every((key,ind) => {
@@ -182,10 +187,10 @@ function ObjectMap(...arg) {
          })
          return returnVal
       }
-      includes(key) { let obj = this['<object>'] || this; return (key in obj) }
-      has(key) { return this.includes(key) }
+      includes(key) { let obj = this['<modified>'] || this['<object>'] || this; return (key in obj) }
+      has(key) { let obj = this['<modified>'] || this['<object>'] || this; return obj.includes(key) }
       modify(callback) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          if (TypeOf(obj,'array')) obj = Object(obj)
          Reflect.ownKeys(obj).forEach((key,ind) => {
             let cb = callback(key, obj[key], obj,ind)
@@ -195,7 +200,7 @@ function ObjectMap(...arg) {
          return Object.setPrototypeOf(obj,mixinProtoSet(this,obj))
       }
       pop() {  
-         let obj = this['<object>']; let el = this['<entries>'].pop();  
+         let obj = this['<modified>'] || this['<object>'] || this; let el = this['<entries>'].pop();  
          if (obj.eject) obj.eject()
          let newObj = create(Object.getPrototypeOf(obj), Object.defineProperty({ key: el.key },'value',{...Object.getPrototypeOf(el)},create(Object.getPrototypeOf(obj))));
          Object.setPrototypeOf(newObj,mixinProtoSet(this,obj));
@@ -204,7 +209,7 @@ function ObjectMap(...arg) {
          return newObj
       }
       push(...args) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          if (TypeOf(args[0]) === 'Object' && (!("key" in args[0]) && !("value" in args[0]) )) {
             args.forEach(arg => {
                Object.keys(arg).forEach(ar => {
@@ -238,13 +243,12 @@ function ObjectMap(...arg) {
          return Object.setPrototypeOf(obj,mixinProtoSet(new ObjMap(obj),obj));
       }
       shift() {
-         let obj = this['<object>']; 
+         let obj = this['<modified>'] || this['<object>']; 
          let entries = TypeOf(this) === 'Entries' ? this : this['<entries>']
          let el = entries.shift();  
-         if (obj.eject) obj.eject()
-         let returnVal = create(Object.getPrototypeOf(obj), Object.defineProperty({ key: el.key },'value',{...Object.getPrototypeOf(el)},create(Object.getPrototypeOf(obj))));
+         const originalProto = getProto(obj) || Object.getPrototypeOf(obj)
+         let returnVal = create(originalProto, Object.defineProperty({ key: el.key },'value',{...Object.getPrototypeOf(el)},create(originalProto)));
          Object.setPrototypeOf(returnVal,mixinProtoSet(this,returnVal)); 
-         Object.setPrototypeOf(obj,mixinProtoSet(this,obj));
          deleteProperty(obj,el.key);
          return returnVal    
       }
@@ -272,7 +276,7 @@ function ObjectMap(...arg) {
                Object.setPrototypeOf(newEntry,desc)
                ents.unshift(newEntry)
             })
-            let obj = this['<object>']
+            let obj = this['<modified>'] || this['<object>']
             this.rerender(obj,ents)
             return Object.setPrototypeOf(obj,mixinProtoSet(new ObjMap(obj),obj));
          }
@@ -290,12 +294,12 @@ function ObjectMap(...arg) {
             ents.unshift(...add)
             this.rerender(null,ents)
          }
-         let obj = this['<object>']
+         let obj = this['<modified>'] || this['<object>']
          return Object.setPrototypeOf(obj,mixinProtoSet(new ObjMap(obj),obj));
          //if (!areEntries(merge)) return	
       }
       remove(callback) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          let entries = TypeOf(this) === 'Entries' ? this : this['<entries>']
          if (typeof callback === 'string') {
             this.find((key,val,ob,ind) => key === callback ? Array.prototype.splice.call(entries,ind,1) && delete obj[key] : false)
@@ -303,10 +307,10 @@ function ObjectMap(...arg) {
          }
          if (TypeOf(obj,'Array')) obj = Object(obj)
          this.find((key,val,obj,ind) => callback(key,val,obj,ind) ? Array.prototype.splice.call(entries,ind,1) && delete obj[key] : false)
-         return obj
+         return Object.setPrototypeOf(obj,mixinProtoSet(new ObjMap(obj),obj));
       }
       filter(callback) { 
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          if (typeof obj !== 'object') return obj
          if (TypeOf(obj,'array')) obj = Object(obj)
          let result = Reflect.ownKeys(obj).reduce((cum,key,ind) => {   
@@ -315,17 +319,15 @@ function ObjectMap(...arg) {
             } else return cum
          },{})
 
-         if (obj.eject) obj.eject()
-
-         result = create(Object.getPrototypeOf(obj),result)
-
+         let originalProto = getProto(obj) || Object.getPrototypeOf(obj)
+         result = create(originalProto,result)
          Object.setPrototypeOf(result,mixinProtoSet(this,obj))
-         Object.defineProperty(Object.getPrototypeOf(result),'<object>',{value:result,enumerable:false,configurable:true})
+         Object.defineProperty(Object.getPrototypeOf(result),'<modified>',{value:result,enumerable:false,configurable:true})
          // Object.setPrototypeOf(obj,mixinProtoSet(this,obj))
          return result
       }  
       map(callback) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          if (typeof obj !== 'object') return obj
          if (TypeOf(obj,'array')) obj = Object(obj)
          let defs = Reflect.ownKeys(obj).reduce((cum,key,ind) => {
@@ -344,13 +346,14 @@ function ObjectMap(...arg) {
             } 
             return cum
          },{})
-         if (obj.eject) obj.eject()
-         let newObj = create(Object.getPrototypeOf(obj),defs)
-         Object.setPrototypeOf(obj,mixinProtoSet(this,obj))
-         return Object.setPrototypeOf(newObj,mixinProtoSet(new ObjMap(newObj),newObj));
+         let originalProto = getProto(obj) || Object.getPrototypeOf(obj)
+         let newObj = create(originalProto,defs)
+         Object.setPrototypeOf(newObj,mixinProtoSet(this,obj))
+         Object.defineProperty(Object.getPrototypeOf(newObj),'<modified>',{value:newObj,enumerable:false,configurable:true})
+         return newObj
       }
       reduce(callback,starter) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          starter = starter || obj
          if (typeof obj !== 'object') return obj
          if (TypeOf(obj,'array')) obj = Object(obj)
@@ -358,7 +361,11 @@ function ObjectMap(...arg) {
             let res = callback(cum,key,obj[key],obj,ind)
             return res
          },starter)
-         return Object.setPrototypeOf(result,mixinProtoSet(new ObjMap(result),result));
+         const originalProto = getProto(obj) || Object.getPrototypeOf(obj)
+         let newObj = create(originalProto,Object.getOwnPropertyDescriptors(result))
+         Object.setPrototypeOf(newObj,mixinProtoSet(this,obj))
+         Object.defineProperty(Object.getPrototypeOf(newObj),'<modified>',{value:newObj,enumerable:false,configurable:true})
+         return newObj
       }  
       rerender(obj,entr) {
          if (arguments.length === 1) 
@@ -374,7 +381,7 @@ function ObjectMap(...arg) {
          return obj
       }
       splice(start,deleteCount,...insert) {
-         let obj = this['<object>'] || this
+         let obj = this['<modified>'] || this['<object>'] || this
          let ents = TypeOf(this) === 'Entries' ? this : this['<entries>'];
          if (insert && insert.length === 1 && TypeOf(insert[0]) === 'Array')
             insert = insert[0]
@@ -432,7 +439,7 @@ function ObjectMap(...arg) {
       objects.get(obj).prototype = Object.getPrototypeOf(obj)
       const objProto = Object.getPrototypeOf(obj)			
       let thisMerge = simpleMerge({eject() { 
-         obj = this['<object>'] || obj || this
+         obj = thiss['<modified>'] || this['<modified>'] || thiss['<object>'] || obj || thiss
          let objProto = objects.get(obj) ? objects.get(obj).prototype : Object.getPrototypeOf(obj); 
          let objLin = Lineage(objProto)
          if (objLin['ObjectMap'])

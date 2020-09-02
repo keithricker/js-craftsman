@@ -209,10 +209,6 @@ const Objekt = (function() {
          },[])
       }
       static has(src, ...includes) { return hasFunc(src, ...includes) }
-      static proto = { get:Object.getPrototypeOf, set:Object.setPrototypeOf, is: (ob) => ob && TypeOf(ob) === 'Object' && !ob.constructor.name === this.proto.get(ob).constructor.name }
-      static descriptor = Object.getOwnPropertyDescriptor
-      static descriptors = Object.getOwnPropertyDescriptors
-      static ownKeys = Reflect.ownKeys
       static namesToString(obj) { return Reflect.ownKeys(obj).toString() }
       static TypeOf(obj) { return TypeOf(obj) } 
       static merge(tr,sr,ex=[],cb,backup=true) {
@@ -332,7 +328,11 @@ const Objekt = (function() {
          let next = lin.Objekt.next.prototype
          Objekt.proto.set(this,next)
       }
-   } 
+   }
+   ObjektClass.proto = { get:Object.getPrototypeOf, set:Object.setPrototypeOf, is: (ob) => ob && TypeOf(ob) === 'Object' && !ob.constructor.name === Object.getPrototypeOf(ob).constructor.name }
+   ObjektClass.descriptor = Object.getOwnPropertyDescriptor
+   ObjektClass.descriptors = Object.getOwnPropertyDescriptors
+   ObjektClass.ownKeys = Reflect.ownKeys
    ObjektClass.define = define
    ObjektClass.integrate = integrate
    ObjektClass.extend = ObjektClass.integrate.extend
